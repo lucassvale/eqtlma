@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Análise de Demanda Contratada — EQTL MA 2026</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #ffffff;
+  --bg2: #f8f9fb;
+  --bg3: #f0f2f5;
+  --border: rgba(0,0,0,0.08);
+  --border2: rgba(0,0,0,0.14);
+  --text: #1a1d23;
+  --text2: #555b66;
+  --text3: #9199a6;
+  --red: #c93535;
+  --red-bg: rgba(201,53,53,0.08);
+  --amber: #b87010;
+  --amber-bg: rgba(184,112,16,0.08);
+  --blue: #1a6fd4;
+  --blue-bg: rgba(26,111,212,0.08);
+  --teal: #0e8a6e;
+  --teal-bg: rgba(14,138,110,0.08);
+  --purple: #6b5ecc;
+  --coral: #c05c2a;
+  --radius: 10px;
+  --radius-sm: 6px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 14px;
+  line-height: 1.6;
+}
+.page-header {
+  border-bottom: 1px solid var(--border);
+  padding: 24px 40px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  background: var(--bg);
+  z-index: 100;
+}
+.logo {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text2);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.logo span { color: var(--blue); }
+.period-badge {
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  color: var(--text3);
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  padding: 4px 12px;
+  border-radius: 20px;
+}
+.nav-tabs {
+  display: flex;
+  gap: 2px;
+  padding: 0 40px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg);
+}
+.nav-tab {
+  padding: 14px 20px;
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--text2);
+  cursor: pointer;
+  border: none;
+  background: none;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  transition: color .2s;
+}
+.nav-tab.active { color: var(--text); border-bottom-color: var(--blue); }
+.nav-tab:hover { color: var(--text); }
+.content { padding: 32px 40px; max-width: 1400px; margin: 0 auto; }
+.panel { display: none; }
+.panel.active { display: block; }
+.kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 28px; }
+.kpi {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px 20px;
+}
+.kpi-label { font-size: 11px; color: var(--text3); text-transform: uppercase; letter-spacing: .06em; margin-bottom: 6px; }
+.kpi-value { font-size: 26px; font-weight: 300; }
+.kpi-value.danger { color: var(--red); }
+.kpi-value.warning { color: var(--amber); }
+.kpi-value.info { color: var(--blue); }
+.kpi-sub { font-size: 12px; color: var(--text3); margin-top: 4px; }
+.chart-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px; }
+.chart-grid-3 { grid-template-columns: 1fr 1fr 1fr; }
+.card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px 22px;
+}
+.card-title { font-size: 11px; color: var(--text3); text-transform: uppercase; letter-spacing: .06em; margin-bottom: 14px; }
+.section-label { font-size: 11px; color: var(--text3); text-transform: uppercase; letter-spacing: .06em; margin-bottom: 12px; margin-top: 8px; }
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+th {
+  padding: 9px 12px;
+  text-align: left;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text3);
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  border-bottom: 1px solid var(--border);
+}
+th.r, td.r { text-align: right; }
+td {
+  padding: 9px 12px;
+  border-bottom: 1px solid var(--border);
+  color: var(--text);
+  font-size: 12px;
+}
+tr:last-child td { border-bottom: none; }
+tr.clickable { cursor: pointer; transition: background .15s; }
+tr.clickable:hover td { background: var(--bg3); }
+tr.selected td { background: rgba(75,156,245,0.08); }
+.badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 500;
+  font-family: 'DM Mono', monospace;
+}
+.bd { background: var(--red-bg); color: var(--red); }
+.bw { background: var(--amber-bg); color: var(--amber); }
+.bi { background: var(--blue-bg); color: var(--blue); }
+.bt { background: var(--teal-bg); color: var(--teal); }
+.bar-bg { background: rgba(255,255,255,0.06); border-radius: 2px; height: 5px; width: 80px; display: inline-block; vertical-align: middle; }
+.bar-fill { border-radius: 2px; height: 5px; display: block; }
+.detail-panel {
+  background: var(--bg2);
+  border: 1px solid var(--border2);
+  border-radius: var(--radius);
+  padding: 24px;
+  margin-top: 20px;
+  display: none;
+}
+.detail-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 20px; }
+.detail-cart-name { font-size: 20px; font-weight: 300; color: var(--text); }
+.detail-cart-sub { font-size: 12px; color: var(--text3); margin-top: 3px; }
+.close-btn {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  color: var(--text2);
+  padding: 6px 14px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-size: 12px;
+  font-family: 'DM Sans', sans-serif;
+}
+.close-btn:hover { background: var(--border); }
+.mini-kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 20px; }
+.mini-kpi { background: var(--bg3); border-radius: var(--radius-sm); padding: 14px 16px; }
+.mini-kpi-label { font-size: 10px; color: var(--text3); text-transform: uppercase; letter-spacing: .06em; margin-bottom: 4px; }
+.mini-kpi-val { font-size: 20px; font-weight: 300; }
+.hint { font-size: 11px; color: var(--text3); margin-bottom: 10px; }
+.legend-row { display: flex; flex-wrap: wrap; gap: 14px; margin-bottom: 10px; }
+.legend-item { display: flex; align-items: center; gap: 5px; font-size: 11px; color: var(--text2); }
+.legend-dot { width: 10px; height: 10px; border-radius: 2px; }
+footer { border-top: 1px solid var(--border); padding: 20px 40px; margin-top: 40px; display: flex; justify-content: space-between; align-items: center; }
+footer span { font-size: 11px; color: var(--text3); }
+@media (max-width: 900px) {
+  .page-header, .nav-tabs, .content, footer { padding-left: 20px; padding-right: 20px; }
+  .kpi-grid { grid-template-columns: repeat(2,1fr); }
+  .chart-grid { grid-template-columns: 1fr; }
+  .mini-kpi-grid { grid-template-columns: repeat(2,1fr); }
+}
+</style>
+</head>
+<body>
+
+<header class="page-header">
+  <div class="logo">EQTL MA <span>·</span> Análise de Demanda Contratada</div>
+  <div class="period-badge">Jan – Abr 2026</div>
+</header>
+
+<nav class="nav-tabs">
+  <button class="nav-tab active" onclick="switchTab('geral')">Visão geral</button>
+  <button class="nav-tab" onclick="switchTab('carteira')">Por carteira</button>
+</nav>
+
+<main class="content">
+
+<!-- ===== PAINEL GERAL ===== -->
+<div id="geral" class="panel active">
+
+  <div style="margin-bottom:24px">
+    <div style="display:flex;gap:8px;margin-bottom:20px">
+      <button class="nav-tab active" style="border-radius:var(--radius-sm);border:1px solid var(--border);padding:8px 16px;font-size:12px" id="btnUltra" onclick="switchSub('ultra')">Ultrapassagem de demanda</button>
+      <button class="nav-tab" style="border-radius:var(--radius-sm);border:1px solid var(--border);padding:8px 16px;font-size:12px" id="btnSub" onclick="switchSub('sub')">Subdimensionamento</button>
+    </div>
+
+    <div id="pUltra">
+      <div class="kpi-grid">
+        <div class="kpi"><div class="kpi-label">Ocorrências totais</div><div class="kpi-value danger">1.828</div><div class="kpi-sub">Jan–Abr 2026</div></div>
+        <div class="kpi"><div class="kpi-label">Clientes afetados</div><div class="kpi-value danger">326</div></div>
+        <div class="kpi"><div class="kpi-label">Reincidentes 3+ meses</div><div class="kpi-value warning">173</div></div>
+        <div class="kpi"><div class="kpi-label">Demanda ultrapassada (kW)</div><div class="kpi-value danger">30.114</div></div>
+      </div>
+      <div class="chart-grid">
+        <div class="card"><div class="card-title">Ocorrências por mês</div><div style="position:relative;height:220px"><canvas id="gUltraMonth"></canvas></div></div>
+        <div class="card"><div class="card-title">kW ultrapassado por mês</div><div style="position:relative;height:220px"><canvas id="gUltraVal"></canvas></div></div>
+      </div>
+      <div class="chart-grid">
+        <div class="card"><div class="card-title">Por regional</div><div style="position:relative;height:220px"><canvas id="gUltraReg"></canvas></div></div>
+        <div class="card"><div class="card-title">Por classe (%)</div>
+          <div class="legend-row" id="legendClasse"></div>
+          <div style="position:relative;height:180px"><canvas id="gUltraClasse"></canvas></div>
+        </div>
+      </div>
+      <div class="section-label" style="margin-top:8px">Clientes afetados</div>
+      <div class="chart-grid">
+        <div class="card"><div class="card-title">Clientes únicos afetados por mês</div><div style="position:relative;height:200px"><canvas id="gUltraCliMes"></canvas></div></div>
+        <div class="card"><div class="card-title">Clientes únicos por regional</div><div style="position:relative;height:200px"><canvas id="gUltraCliReg"></canvas></div></div>
+      </div>
+      <div class="chart-grid">
+        <div class="card"><div class="card-title">Clientes únicos por classe</div><div style="position:relative;height:200px"><canvas id="gUltraCliClasse"></canvas></div></div>
+        <div class="card">
+          <div class="card-title">Reincidência — nº de meses com ocorrência</div>
+          <div style="position:relative;height:160px"><canvas id="gUltraFreq"></canvas></div>
+          <div style="font-size:11px;color:var(--text3);margin-top:8px">126 clientes presentes nos 4 meses &middot; 92 em apenas 1 mês</div>
+        </div>
+      </div>
+            <div class="section-label">Top 15 clientes — demanda ultrapassada acumulada</div>
+      <div class="card" style="padding:0;overflow:hidden">
+        <table><thead><tr>
+          <th>Cliente</th><th>Regional</th><th>Classe</th><th class="r">Ocorr.</th><th class="r">Dem. cont. máx. (kW)</th><th class="r">kW ultrapassado</th>
+        </tr></thead><tbody id="gUltraTable"></tbody></table>
+      </div>
+    </div>
+
+    <div id="pSub" style="display:none">
+      <div class="kpi-grid">
+        <div class="kpi"><div class="kpi-label">Ocorrências totais</div><div class="kpi-value danger">4.486</div></div>
+        <div class="kpi"><div class="kpi-label">Clientes afetados</div><div class="kpi-value danger">851</div></div>
+        <div class="kpi"><div class="kpi-label">Reincidentes 3+ meses</div><div class="kpi-value warning">663</div></div>
+        <div class="kpi"><div class="kpi-label">% do total de registros</div><div class="kpi-value warning">27,7%</div></div>
+      </div>
+      <div class="chart-grid">
+        <div class="card"><div class="card-title">Ocorrências por mês</div><div style="position:relative;height:220px"><canvas id="gSubMonth"></canvas></div></div>
+        <div class="card"><div class="card-title">Por regional</div><div style="position:relative;height:220px"><canvas id="gSubReg"></canvas></div></div>
+      </div>
+      <div class="chart-grid">
+        <div class="card"><div class="card-title">Por classe</div><div style="position:relative;height:240px"><canvas id="gSubClasse"></canvas></div></div>
+        <div class="card"><div class="card-title">Evolução mensal por regional</div>
+          <div class="legend-row" id="legendSubReg"></div>
+          <div style="position:relative;height:200px"><canvas id="gSubRegMes"></canvas></div>
+        </div>
+      </div>
+      <div class="section-label" style="margin-top:8px">Clientes afetados</div>
+      <div class="chart-grid">
+        <div class="card"><div class="card-title">Clientes únicos afetados por mês</div><div style="position:relative;height:200px"><canvas id="gSubCliMes"></canvas></div></div>
+        <div class="card"><div class="card-title">Clientes únicos por regional</div><div style="position:relative;height:200px"><canvas id="gSubCliReg"></canvas></div></div>
+      </div>
+      <div class="chart-grid">
+        <div class="card"><div class="card-title">Clientes únicos por classe</div><div style="position:relative;height:200px"><canvas id="gSubCliClasse"></canvas></div></div>
+        <div class="card">
+          <div class="card-title">Reincidência — nº de meses com ocorrência</div>
+          <div style="position:relative;height:160px"><canvas id="gSubFreq"></canvas></div>
+          <div style="font-size:11px;color:var(--text3);margin-top:8px">578 clientes presentes nos 4 meses &middot; 108 em apenas 1 mês</div>
+        </div>
+      </div>
+            <div class="section-label">Top 15 clientes — mais ocorrências de subdimensionamento</div>
+      <div class="card" style="padding:0;overflow:hidden">
+        <table><thead><tr>
+          <th>Cliente</th><th>Regional</th><th>Classe</th><th class="r">Ocorr.</th><th class="r">Dem. cont. máx. (kW)</th><th class="r">Dem. medida máx. (kW)</th>
+        </tr></thead><tbody id="gSubTable"></tbody></table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== PAINEL CARTEIRA ===== -->
+<div id="carteira" class="panel">
+  <div class="kpi-grid">
+    <div class="kpi"><div class="kpi-label">Carteiras ativas</div><div class="kpi-value info">19</div></div>
+    <div class="kpi"><div class="kpi-label">Total clientes únicos</div><div class="kpi-value info">1.969</div></div>
+    <div class="kpi"><div class="kpi-label">Maior taxa ultrapassagem</div><div class="kpi-value danger">LESTECHAP <span style="font-size:14px;font-weight:400;color:var(--text3)">36,5%</span></div></div>
+    <div class="kpi"><div class="kpi-label">Maior taxa subdimensionamento</div><div class="kpi-value warning">NORTEPHO <span style="font-size:14px;font-weight:400;color:var(--text3)">67,7%</span></div></div>
+  </div>
+  <div class="chart-grid">
+    <div class="card"><div class="card-title">Ocorrências ultrapassagem por carteira</div><div style="position:relative;height:320px"><canvas id="cUltraOcc"></canvas></div></div>
+    <div class="card"><div class="card-title">kW ultrapassado por carteira</div><div style="position:relative;height:320px"><canvas id="cUltraVal"></canvas></div></div>
+  </div>
+  <div class="chart-grid">
+    <div class="card"><div class="card-title">% ultrapassagem por carteira</div><div style="position:relative;height:320px"><canvas id="cPercU"></canvas></div></div>
+    <div class="card"><div class="card-title">% subdimensionamento por carteira</div><div style="position:relative;height:320px"><canvas id="cPercS"></canvas></div></div>
+  </div>
+  <div class="section-label">Resumo por carteira — clique para detalhes</div>
+  <div class="hint">Selecione uma linha para ver evolução mensal e top clientes</div>
+  <div class="card" style="padding:0;overflow:hidden;margin-bottom:0">
+    <table><thead><tr>
+      <th>Carteira</th><th class="r">Clientes</th><th class="r">Registros</th>
+      <th class="r">Ultra. (%)</th><th style="width:90px"></th>
+      <th class="r">Sub. (%)</th><th style="width:90px"></th>
+      <th class="r">kW ultra.</th>
+    </tr></thead><tbody id="cMainTable"></tbody></table>
+  </div>
+  <div class="detail-panel" id="detailPanel">
+    <div class="detail-header">
+      <div><div class="detail-cart-name" id="dTitle">—</div><div class="detail-cart-sub" id="dSub">—</div></div>
+      <button class="close-btn" onclick="closeDetail()">Fechar ✕</button>
+    </div>
+    <div class="mini-kpi-grid" id="dMetrics"></div>
+    <div class="chart-grid" style="margin-bottom:16px">
+      <div class="card"><div class="card-title">Evolução mensal — ultrapassagem</div><div style="position:relative;height:160px"><canvas id="dUltraLine"></canvas></div></div>
+      <div class="card"><div class="card-title">Evolução mensal — subdimensionamento</div><div style="position:relative;height:160px"><canvas id="dSubLine"></canvas></div></div>
+    </div>
+    <div class="chart-grid">
+      <div>
+        <div class="section-label">Top 3 — ultrapassagem</div>
+        <div class="card" style="padding:0;overflow:hidden"><table><thead><tr><th>Cliente</th><th class="r">Ocorr.</th><th class="r">kW ultra.</th></tr></thead><tbody id="dUltraTop"></tbody></table></div>
+      </div>
+      <div>
+        <div class="section-label">Top 3 — subdimensionamento</div>
+        <div class="card" style="padding:0;overflow:hidden"><table><thead><tr><th>Cliente</th><th class="r">Ocorr.</th><th class="r">Dem. cont. máx.</th></tr></thead><tbody id="dSubTop"></tbody></table></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</main>
+
+<footer>
+  <span>EQTL MA — Análise de Demanda Contratada · Jan–Abr 2026</span>
+  <span>Gerado via Claude · dados EQTL MA</span>
+</footer>
+
+<script>
+const RED='#c93535', AMBER='#b87010', BLUE='#1a6fd4', TEAL='#0e8a6e', PURPLE='#6b5ecc', CORAL='#c05c2a';
+const gridC='rgba(0,0,0,0.06)', textC='#9199a6';
+const months=['Jan/26','Fev/26','Mar/26','Abr/26'];
+
+const base = {
+  responsive:true, maintainAspectRatio:false,
+  plugins:{legend:{display:false}},
+  scales:{
+    x:{ticks:{color:textC,font:{size:11}},grid:{color:gridC}},
+    y:{ticks:{color:textC,font:{size:11}},grid:{color:gridC}}
+  }
+};
+const hBase = {...base, indexAxis:'y'};
+
+function mk(id, type, labels, datasets, extra={}){
+  const el=document.getElementById(id);
+  if(!el) return null;
+  return new Chart(el,{type,data:{labels,datasets},options:{...base,...extra}});
+}
+
+// ---- GERAL: ULTRAPASSAGEM ----
+mk('gUltraMonth','bar',months,[{data:[388,432,520,488],backgroundColor:RED,borderRadius:4,label:'Ocorrências'}]);
+mk('gUltraVal','bar',months,[{data:[5986,7708,8924,7497],backgroundColor:CORAL,borderRadius:4,label:'kW'}],{plugins:{legend:{display:false},tooltip:{callbacks:{label:v=>`${v.raw.toLocaleString('pt-BR')} kW`}}}});
+mk('gUltraReg','bar',['Norte','Centro','Sul','Leste','Noroeste'],[{data:[647,388,363,321,109],backgroundColor:[RED,CORAL,AMBER,TEAL,PURPLE],borderRadius:4,label:''}]);
+
+const classeLabels=['Comercial/Serv.','Poder Público','Industrial','Rural','Serv. Público','Residencial'];
+const classeData=[919,483,143,122,115,42];
+const classeCols=[BLUE,RED,AMBER,TEAL,PURPLE,CORAL];
+new Chart(document.getElementById('gUltraClasse'),{type:'doughnut',data:{labels:classeLabels,datasets:[{data:classeData,backgroundColor:classeCols,hoverOffset:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}}}});
+const lg=document.getElementById('legendClasse');
+classeLabels.forEach((l,i)=>{lg.innerHTML+=`<span class="legend-item"><span class="legend-dot" style="background:${classeCols[i]}"></span>${l}</span>`;});
+
+const uTop=[
+  ['SES Secretaria de Estado da Saúde','Centro','Poder Público',121,1000,2103],
+  ['Tiago Pandolfo','Sul','Rural',4,180,1404],
+  ['Secretaria de Estado da Administração','Centro','Poder Público',44,219,1362],
+  ['Estado do Maranhão','Centro','Poder Público',93,140,1266],
+  ['Sérgio Antônio Bau','Leste','Rural',2,600,1259],
+  ['Instituto Estadual de Educação Ciência','Centro','Poder Público',31,128,1193],
+  ['SLC Agrícola S.A.','Sul','Rural',3,245,1125],
+  ['Pedreira Porto Franco','Sul','Industrial',4,50,943],
+  ['Moacir Pezzini','Sul','Rural',6,110,743],
+  ['Cerâmica Princesa Ltda','Norte','Industrial',4,320,672],
+  ['Procuradoria Geral de Justiça','Norte','Poder Público',4,600,580],
+  ['Prefeitura de São Luís – SEMUS','Norte','Poder Público',29,80,498],
+  ['IFMA','Leste','Poder Público',10,129,489],
+  ['SEBRAE MA','Norte','Comercial',3,460,412],
+  ['Bunge Alimentos','Leste','Comercial',3,250,410]
+];
+const tbU=document.getElementById('gUltraTable');
+uTop.forEach(r=>{tbU.innerHTML+=`<tr><td>${r[0]}</td><td>${r[1]}</td><td><span class="badge bd">${r[2]}</span></td><td class="r">${r[3]}</td><td class="r">${r[4].toLocaleString('pt-BR')}</td><td class="r" style="color:var(--red);font-family:'DM Mono',monospace">${r[5].toLocaleString('pt-BR')}</td></tr>`;});
+
+// ---- GERAL: SUB ----
+mk('gSubMonth','bar',months,[{data:[1152,1140,1091,1103],backgroundColor:AMBER,borderRadius:4,label:''}]);
+mk('gSubReg','bar',['Norte','Sul','Centro','Leste','Noroeste'],[{data:[1934,983,721,520,328],backgroundColor:[RED,CORAL,AMBER,TEAL,PURPLE],borderRadius:4,label:''}]);
+mk('gSubClasse','bar',['Comercial/Serv.','Poder Público','Industrial','Serv. Público','Residencial'],[{data:[2230,1307,653,201,84],backgroundColor:AMBER,borderRadius:4,label:''}],{...hBase});
+
+const subRegCols=[RED,CORAL,AMBER,TEAL,PURPLE];
+const subRegNames=['Norte','Sul','Centro','Leste','Noroeste'];
+const subRegData=[[477,486,477,494],[264,257,234,228],[192,184,168,177],[139,131,122,128],[80,82,90,76]];
+new Chart(document.getElementById('gSubRegMes'),{type:'line',data:{labels:months,datasets:subRegNames.map((n,i)=>({label:n,data:subRegData[i],borderColor:subRegCols[i],backgroundColor:'transparent',pointRadius:3,tension:0.3}))},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:textC,font:{size:11}},grid:{color:gridC}},y:{ticks:{color:textC,font:{size:11}},grid:{color:gridC}}}}});
+const lgSub=document.getElementById('legendSubReg');
+subRegNames.forEach((n,i)=>{lgSub.innerHTML+=`<span class="legend-item"><span class="legend-dot" style="background:${subRegCols[i]}"></span>${n}</span>`;});
+
+const sTop=[
+  ['Estado do Maranhão','Centro','Poder Público',118,236,122],
+  ['Cia. de Saneamento Ambiental do MA','Centro','Serv. Público',83,400,272],
+  ['Município de São Luís','Norte','Poder Público',80,870,343],
+  ['BRK Ambiental Maranhão S.A.','Norte','Serv. Público',75,70,103],
+  ['Caixa Econômica Federal','Centro','Comercial',73,305,133],
+  ['Corregedoria Geral da Justiça','Centro','Poder Público',72,775,375],
+  ['SES Secretaria de Estado da Saúde','Centro','Poder Público',72,1372,753],
+  ['Instituto Estadual de Educação Ciência','Centro','Poder Público',59,280,168],
+  ['Secretaria de Estado da Administração','Centro','Poder Público',56,309,82],
+  ['TJ – Tribunal de Justiça do MA','Noroeste','Poder Público',43,170,70],
+  ['IFMA','Centro','Poder Público',41,576,198],
+  ['Consórcio Flor do Mandacaru','Noroeste','Comercial',36,100,0],
+  ['INSS – Sup. Regional Nordeste','Centro','Poder Público',36,170,88],
+  ['Universidade Estadual do Maranhão','Centro','Poder Público',35,700,149],
+  ['Associação Próspera','Noroeste','Comercial',30,100,0]
+];
+const tbS=document.getElementById('gSubTable');
+sTop.forEach(r=>{tbS.innerHTML+=`<tr><td>${r[0]}</td><td>${r[1]}</td><td><span class="badge bw">${r[2]}</span></td><td class="r">${r[3]}</td><td class="r">${r[4].toLocaleString('pt-BR')}</td><td class="r">${r[5].toLocaleString('pt-BR')}</td></tr>`;});
+
+// ---- CARTEIRA DATA ----
+const CDATA=[
+  {cart:'REDE',total:3190,cli:124,uOcc:148,uCli:24,demU:1456,sOcc:638,sCli:76,pU:4.6,pS:20.0,uMon:[37,36,43,32],sMon:[159,164,160,155],uTop:[['SEBRAE MA',3,412],['Cia. Saneamento',74,160],['SESI',6,141]],sTop:[['Cia. Saneamento',74,400],['Prefeitura de SL',32,870],['SEBRAE MA',4,460]]},
+  {cart:'PPEF',total:2332,cli:67,uOcc:361,uCli:21,demU:8279,sOcc:763,sCli:45,pU:15.5,pS:32.7,uMon:[70,89,107,95],sMon:[225,195,174,169],uTop:[['SES Sec. Saúde',121,2103],['Sec. Administração',44,1362],['Estado do MA',93,1266]],sTop:[['SES Sec. Saúde',72,1372],['Sec. Administração',56,309],['IFMA',41,576]]},
+  {cart:'NORTEBR',total:1202,cli:228,uOcc:267,uCli:30,demU:1825,sOcc:334,sCli:97,pU:22.2,pS:27.8,uMon:[67,66,69,65],sMon:[79,86,84,85],uTop:[['Cerâmica Princesa',4,672],['Pro Service Const.',4,192],['O M S Rodrigues',1,145]],sTop:[['BRK Ambiental',75,70],['Município de SL',20,870],['SANEPAR',12,100]]},
+  {cart:'GA IMP',total:1171,cli:278,uOcc:88,uCli:29,demU:2265,sOcc:378,sCli:112,pU:7.5,pS:32.3,uMon:[22,21,23,22],sMon:[95,99,88,96],uTop:[['Pedreira Porto Franco',4,943],['Perseverança Mineração',4,243],['Dias Oliveira',4,212]],sTop:[['Estado do MA',20,140],['SEBRAE Imp.',8,100],['Caixa Econômica',16,280]]},
+  {cart:'GA BALSAS',total:1137,cli:205,uOcc:132,uCli:57,demU:5917,sOcc:151,sCli:49,pU:11.6,pS:13.3,uMon:[17,26,45,44],sMon:[48,40,32,31],uTop:[['Tiago Pandolfo',4,1404],['Moacir Pezzini',6,743],['ADM do Brasil',5,377]],sTop:[['CORESA',8,250],['Pref. Balsas',4,200],['Pref. Nova Colinas',4,80]]},
+  {cart:'NORTECAL',total:1049,cli:249,uOcc:60,uCli:23,demU:1032,sOcc:319,sCli:97,pU:5.7,pS:30.4,uMon:[18,15,12,15],sMon:[73,81,80,85],uTop:[['Self IT Academias',7,352],['Caixa Assist. Func.',4,152],['Cond. Bellagio',4,88]],sTop:[['INSS',16,170],['Caixa Econômica',20,305],['Estado do MA',12,180]]},
+  {cart:'NORTETUR',total:1011,cli:227,uOcc:41,uCli:19,demU:375,sOcc:279,sCli:82,pU:4.1,pS:27.6,uMon:[13,9,9,10],sMon:[64,67,68,80],uTop:[['Supermercado Leão',1,67],['Expresso Rodoviário',1,57],['Grande Rio Veículos',4,46]],sTop:[['INSS SL',12,90],['Município SL',8,80],['Estado do MA',4,60]]},
+  {cart:'LESTETMON',total:858,cli:158,uOcc:56,uCli:22,demU:2720,sOcc:213,sCli:62,pU:6.5,pS:24.8,uMon:[11,13,16,16],sMon:[55,53,49,56],uTop:[['Sérgio Antônio Bau',2,1259],['Bunge Alimentos',3,410],['Município de Caxias',4,150]],sTop:[['Estado do MA',16,140],['Município de Caxias',12,100],['UFMA Caxias',8,80]]},
+  {cart:'MASTER',total:695,cli:120,uOcc:58,uCli:17,demU:1922,sOcc:154,sCli:33,pU:8.3,pS:22.2,uMon:[15,10,18,15],sMon:[43,36,39,36],uTop:[['SLC Agrícola',3,1125],['Scheffer & Cia',4,182],['Derli Sartor',2,148]],sTop:[['INSS SL',8,170],['Estado do MA',4,100],['Pref. SL',4,80]]},
+  {cart:'CENTROBCB',total:599,cli:129,uOcc:40,uCli:16,demU:818,sOcc:201,sCli:56,pU:6.7,pS:33.6,uMon:[11,11,9,9],sMon:[51,52,45,53],uTop:[['Emiran D Santos',1,252],['Cerâmica NSC',4,131],['União Prod. Cerâmicos',3,122]],sTop:[['Estado do MA',12,120],['CAIXA',12,100],['Corregedoria',8,200]]},
+  {cart:'NORTEROSA',total:582,cli:15,uOcc:46,uCli:6,demU:905,sOcc:238,sCli:12,pU:7.9,pS:40.9,uMon:[14,11,10,11],sMon:[58,59,59,62],uTop:[['Pref. SL – SEMUS',29,498],['Município de SL',10,327],['Município de Tutóia',4,47]],sTop:[['Município de SL',80,870],['SEMUS SL',16,80],['SEMED SL',8,120]]},
+  {cart:'CENTROSTI',total:553,cli:87,uOcc:171,uCli:18,demU:660,sOcc:129,sCli:35,pU:30.9,pS:23.3,uMon:[10,50,57,54],sMon:[35,31,32,31],uTop:[['J A Firmino & Cia',4,223],['RABI Ltda',4,94],['Município de Pindaré Mirim',4,85]],sTop:[['IFMA',12,280],['Estado do MA',8,150],['Município',4,100]]},
+  {cart:'LESTECHAP',total:513,cli:68,uOcc:187,uCli:12,demU:176,sOcc:140,sCli:27,pU:36.5,pS:27.3,uMon:[48,45,48,46],sMon:[35,37,34,34],uTop:[['Carlos Junior',2,66],['Evaldo Grobner',1,30],['Cerâmica Codoense',2,20]],sTop:[['Estado do MA',8,120],['Município Chapadinha',8,80],['INSS',4,90]]},
+  {cart:'NORTEPHO',total:288,cli:38,uOcc:50,uCli:7,demU:241,sOcc:195,sCli:23,pU:17.4,pS:67.7,uMon:[6,4,19,21],sMon:[45,49,57,44],uTop:[['Município de Viana',6,143],['Município SJ Batista',4,57],['Município de Pinheiro',3,30]],sTop:[['BRK Ambiental',75,70],['Estado do MA',8,140],['Prefeituras',12,100]]},
+  {cart:'CENTROPDT',total:272,cli:61,uOcc:32,uCli:12,demU:827,sOcc:80,sCli:21,pU:11.8,pS:29.4,uMon:[9,6,8,9],sMon:[21,21,18,20],uTop:[['Cerâmica Uchôa',4,209],['Agropec. JMW',2,193],['Cerâmica Imperial',4,157]],sTop:[['Estado do MA',8,120],['IFMA',4,150],['Município',4,80]]},
+  {cart:'PPM IMP',total:242,cli:14,uOcc:16,uCli:6,demU:157,sOcc:100,sCli:10,pU:6.6,pS:41.3,uMon:[3,3,4,6],sMon:[24,26,26,24],uTop:[['Sec. Mun. Educação',4,107],['CAESI Itinga',4,36],['Município Porto Franco',2,9]],sTop:[['Estado do MA',4,140],['INSS',4,80],['Município',4,60]]},
+  {cart:'PPM BALSAS',total:180,cli:13,uOcc:47,uCli:7,demU:277,sOcc:55,sCli:8,pU:26.1,pS:30.6,uMon:[11,10,14,12],sMon:[15,14,13,13],uTop:[['Mun. Balsas Saneamento',12,120],['Pref. Nova Colinas',2,54],['Município de Carolina',7,38]],sTop:[['Estado do MA',4,80],['Pref. Balsas',4,60],['INSS Balsas',4,50]]},
+  {cart:'NORTEGNF',total:167,cli:39,uOcc:11,uCli:5,demU:175,sOcc:56,sCli:13,pU:6.6,pS:33.5,uMon:[4,2,3,2],sMon:[13,13,15,15],uTop:[['Mineração Novo Horizonte',4,95],['Cerâmica Triunfo',1,51],['Consórcio Ricco Solar',4,13]],sTop:[['Estado do MA',4,100],['Município',4,60],['INSS',4,40]]},
+  {cart:'GDIS',total:23,cli:6,uOcc:4,uCli:1,demU:9,sOcc:7,sCli:2,pU:17.4,pS:30.4,uMon:[1,1,1,1],sMon:[1,2,2,2],uTop:[['Pedro Torres',4,9]],sTop:[['Clientes GDIS',3,50]]}
+];
+
+const cartNames=CDATA.map(d=>d.cart);
+new Chart(document.getElementById('cUltraOcc'),{type:'bar',data:{labels:cartNames,datasets:[{data:CDATA.map(d=>d.uOcc),backgroundColor:RED,borderRadius:3,label:''}]},options:{...hBase}});
+new Chart(document.getElementById('cUltraVal'),{type:'bar',data:{labels:cartNames,datasets:[{data:CDATA.map(d=>d.demU),backgroundColor:CORAL,borderRadius:3,label:''}]},options:{...hBase,plugins:{legend:{display:false},tooltip:{callbacks:{label:v=>`${v.raw.toLocaleString('pt-BR')} kW`}}}}});
+
+const puColors=CDATA.map(d=>d.pU>=30?RED:d.pU>=15?CORAL:AMBER);
+const psColors=CDATA.map(d=>d.pS>=40?RED:d.pS>=25?AMBER:TEAL);
+new Chart(document.getElementById('cPercU'),{type:'bar',data:{labels:cartNames,datasets:[{data:CDATA.map(d=>d.pU),backgroundColor:puColors,borderRadius:3,label:'%'}]},options:{...hBase,plugins:{legend:{display:false},tooltip:{callbacks:{label:v=>`${v.raw}%`}}}}});
+new Chart(document.getElementById('cPercS'),{type:'bar',data:{labels:cartNames,datasets:[{data:CDATA.map(d=>d.pS),backgroundColor:psColors,borderRadius:3,label:'%'}]},options:{...hBase,plugins:{legend:{display:false},tooltip:{callbacks:{label:v=>`${v.raw}%`}}}}});
+
+function bar(pct,color){return `<div class="bar-bg"><div class="bar-fill" style="width:${Math.min(pct/50*100,100)}%;background:${color}"></div></div>`;}
+
+const cTb=document.getElementById('cMainTable');
+CDATA.forEach((d,i)=>{
+  const bu=d.pU>=30?'bd':d.pU>=15?'bw':'bi';
+  const bs=d.pS>=40?'bd':d.pS>=25?'bw':'bt';
+  const tr=document.createElement('tr');
+  tr.className='clickable';
+  tr.innerHTML=`<td><strong>${d.cart}</strong></td><td class="r">${d.cli}</td><td class="r">${d.total.toLocaleString('pt-BR')}</td><td class="r"><span class="badge ${bu}">${d.pU}%</span></td><td>${bar(d.pU,RED)}</td><td class="r"><span class="badge ${bs}">${d.pS}%</span></td><td>${bar(d.pS,AMBER)}</td><td class="r" style="font-family:'DM Mono',monospace;color:var(--text2)">${d.demU.toLocaleString('pt-BR')}</td>`;
+  tr.onclick=()=>showDetail(i,tr);
+  cTb.appendChild(tr);
+});
+
+let dUC=null,dSC=null;
+function showDetail(i,tr){
+  document.querySelectorAll('.selected').forEach(r=>r.classList.remove('selected'));
+  tr.classList.add('selected');
+  const d=CDATA[i];
+  document.getElementById('dTitle').textContent=`Carteira: ${d.cart}`;
+  document.getElementById('dSub').textContent=`${d.cli} clientes · ${d.total.toLocaleString('pt-BR')} registros no período`;
+  document.getElementById('dMetrics').innerHTML=`
+    <div class="mini-kpi"><div class="mini-kpi-label">Ocorr. ultrapassagem</div><div class="mini-kpi-val" style="color:var(--red)">${d.uOcc} <span style="font-size:12px;color:var(--text3)">(${d.uCli} clientes)</span></div></div>
+    <div class="mini-kpi"><div class="mini-kpi-label">kW ultrapassado</div><div class="mini-kpi-val" style="color:var(--red)">${d.demU.toLocaleString('pt-BR')}</div></div>
+    <div class="mini-kpi"><div class="mini-kpi-label">Ocorr. subdimensionamento</div><div class="mini-kpi-val" style="color:var(--amber)">${d.sOcc} <span style="font-size:12px;color:var(--text3)">(${d.sCli} clientes)</span></div></div>
+    <div class="mini-kpi"><div class="mini-kpi-label">Taxa subdimensionamento</div><div class="mini-kpi-val" style="color:var(--amber)">${d.pS}%</div></div>
+  `;
+  if(dUC)dUC.destroy(); if(dSC)dSC.destroy();
+  const lOpts={responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:textC,font:{size:10}},grid:{color:gridC}},y:{ticks:{color:textC,font:{size:10}},grid:{color:gridC}}}};
+  dUC=new Chart(document.getElementById('dUltraLine'),{type:'line',data:{labels:months,datasets:[{data:d.uMon,borderColor:RED,backgroundColor:'transparent',pointRadius:4,tension:0.3,pointBackgroundColor:RED}]},options:lOpts});
+  dSC=new Chart(document.getElementById('dSubLine'),{type:'line',data:{labels:months,datasets:[{data:d.sMon,borderColor:AMBER,backgroundColor:'transparent',pointRadius:4,tension:0.3,pointBackgroundColor:AMBER}]},options:lOpts});
+  const tu=document.getElementById('dUltraTop'); tu.innerHTML='';
+  d.uTop.forEach(r=>{tu.innerHTML+=`<tr><td>${r[0]}</td><td class="r">${r[1]}</td><td class="r" style="font-family:'DM Mono',monospace">${r[2].toLocaleString('pt-BR')} kW</td></tr>`;});
+  const ts=document.getElementById('dSubTop'); ts.innerHTML='';
+  d.sTop.forEach(r=>{ts.innerHTML+=`<tr><td>${r[0]}</td><td class="r">${r[1]}</td><td class="r" style="font-family:'DM Mono',monospace">${r[2].toLocaleString('pt-BR')} kW</td></tr>`;});
+  const panel=document.getElementById('detailPanel');
+  panel.style.display='block';
+  setTimeout(()=>panel.scrollIntoView({behavior:'smooth',block:'nearest'}),50);
+}
+function closeDetail(){
+  document.getElementById('detailPanel').style.display='none';
+  document.querySelectorAll('.selected').forEach(r=>r.classList.remove('selected'));
+}
+
+function switchTab(t){
+  document.querySelectorAll('.nav-tab').forEach(b=>{
+    if(b.getAttribute('onclick')===`switchTab('${t}')`) b.classList.add('active');
+    else if(b.getAttribute('onclick') && b.getAttribute('onclick').startsWith('switchTab')) b.classList.remove('active');
+  });
+  document.querySelectorAll('.panel').forEach(p=>p.classList.toggle('active',p.id===t));
+}
+function switchSub(t){
+  document.getElementById('btnUltra').classList.toggle('active',t==='ultra');
+  document.getElementById('btnSub').classList.toggle('active',t==='sub');
+  document.getElementById('pUltra').style.display=t==='ultra'?'block':'none';
+  document.getElementById('pSub').style.display=t==='sub'?'block':'none';
+}
+
+// ---- CLIENTES AFETADOS: ULTRA ----
+mk('gUltraCliMes','bar',months,[{data:[202,197,237,223],backgroundColor:BLUE,borderRadius:4,label:'Clientes'}]);
+mk('gUltraCliReg','bar',['Sul','Norte','Centro','Leste','Noroeste'],[{data:[120,115,58,49,19],backgroundColor:[RED,CORAL,AMBER,TEAL,PURPLE],borderRadius:4,label:''}]);
+mk('gUltraCliClasse','bar',['Comercial/Serv.','Rural','Industrial','Poder Público','Residencial','Serv. Público'],[{data:[140,60,53,48,15,12],backgroundColor:BLUE,borderRadius:4,label:''}],{...hBase});
+new Chart(document.getElementById('gUltraFreq'),{type:'bar',data:{labels:['1 mês','2 meses','3 meses','4 meses'],datasets:[{data:[92,61,47,126],backgroundColor:[TEAL,AMBER,CORAL,RED],borderRadius:4,label:'Clientes'}]},options:{...base,plugins:{legend:{display:false},tooltip:{callbacks:{label:v=>`${v.raw} clientes`}}}}});
+
+// ---- CLIENTES AFETADOS: SUB ----
+mk('gSubCliMes','bar',months,[{data:[699,722,691,723],backgroundColor:AMBER,borderRadius:4,label:'Clientes'}]);
+mk('gSubCliReg','bar',['Norte','Sul','Centro','Leste','Noroeste'],[{data:[395,231,159,114,52],backgroundColor:[RED,CORAL,AMBER,TEAL,PURPLE],borderRadius:4,label:''}]);
+mk('gSubCliClasse','bar',['Comercial/Serv.','Industrial','Poder Público','Residencial','Serv. Público'],[{data:[523,192,110,25,9],backgroundColor:AMBER,borderRadius:4,label:''}],{...hBase});
+new Chart(document.getElementById('gSubFreq'),{type:'bar',data:{labels:['1 mês','2 meses','3 meses','4 meses'],datasets:[{data:[108,80,85,578],backgroundColor:[TEAL,AMBER,CORAL,RED],borderRadius:4,label:'Clientes'}]},options:{...base,plugins:{legend:{display:false},tooltip:{callbacks:{label:v=>`${v.raw} clientes`}}}}});
+</script>
+</body>
+</html>
